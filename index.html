@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>水泥杯叫貨估算系統</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9E%95%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          cream: '#FBFBFA',
+          ink: '#2B2B29',
+        },
+        fontFamily: {
+          sans: ['"Noto Sans TC"', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Noto Sans TC', sans-serif; background:#FBFBFA; color:#2B2B29; }
+  .tracking-wider2 { letter-spacing: 0.12em; }
+  .tracking-wider3 { letter-spacing: 0.18em; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  ::-webkit-scrollbar { width: 4px; height:4px; }
+  ::-webkit-scrollbar-thumb { background:#E7E5E1; border-radius:4px; }
+  .fade-in { animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(2px);} to{opacity:1; transform:translateY(0);} }
+  select { background-image: none; }
+</style>
+</head>
+<body class="min-h-screen pb-16">
+
+<div class="max-w-md md:max-w-6xl mx-auto px-5 pt-10">
+
+  <!-- 頁首 -->
+  <header class="mb-10 text-center">
+    <h1 class="text-xl font-light tracking-wider2 text-ink">水泥杯叫貨估算系統</h1>
+    <div class="w-8 h-px bg-stone-300 mx-auto mt-4"></div>
+  </header>
+
+  <!-- 雙欄容器（電腦版）／單欄（手機版） -->
+  <div class="md:grid md:grid-cols-2 md:gap-8 md:items-start">
+
+    <!-- 左欄：選品區 + 費用估算 -->
+    <div class="md:flex md:flex-col">
+
+      <!-- 選品區 -->
+      <section class="bg-white border border-stone-100 rounded-2xl p-5 mb-6 fade-in">
+        <h2 class="text-xs tracking-wider3 text-stone-400 font-light mb-4">選擇品項</h2>
+
+        <!-- 色系 -->
+        <div class="mb-5">
+          <p class="text-[11px] tracking-wider2 text-stone-400 font-light mb-2">色系</p>
+          <div id="categoryButtons" class="grid grid-cols-3 gap-2"></div>
+        </div>
+
+        <!-- 顏色 -->
+        <div class="mb-5">
+          <p class="text-[11px] tracking-wider2 text-stone-400 font-light mb-2">顏色</p>
+          <div class="relative">
+            <select id="colorSelect" class="w-full appearance-none border border-stone-200 rounded-xl py-3 px-4 text-sm font-light tracking-wide text-ink focus:outline-none focus:border-stone-400 bg-white"></select>
+            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 text-xs">▾</div>
+          </div>
+        </div>
+
+        <!-- 尺寸 -->
+        <div class="mb-5" id="sizeWrap">
+          <p class="text-[11px] tracking-wider2 text-stone-400 font-light mb-2">尺寸</p>
+          <div id="sizeButtons" class="grid grid-cols-2 gap-2"></div>
+        </div>
+
+        <!-- 工藝 -->
+        <div class="mb-5" id="craftWrap">
+          <p class="text-[11px] tracking-wider2 text-stone-400 font-light mb-2">工藝</p>
+          <div id="craftButtons" class="grid grid-cols-3 gap-2"></div>
+        </div>
+
+        <!-- 數量 -->
+        <div class="mb-5">
+          <p class="text-[11px] tracking-wider2 text-stone-400 font-light mb-2">數量</p>
+          <div class="flex items-center gap-3">
+            <button id="qtyMinus" class="w-11 h-11 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 text-lg font-light active:bg-stone-100 transition">－</button>
+            <input id="qtyInput" type="number" value="1" min="1" class="flex-1 text-center border border-stone-200 rounded-xl py-3 text-sm font-light focus:outline-none focus:border-stone-400">
+            <button id="qtyPlus" class="w-11 h-11 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 text-lg font-light active:bg-stone-100 transition">＋</button>
+          </div>
+        </div>
+
+        <!-- 單價顯示 -->
+        <div class="flex items-center justify-between mb-4 px-1">
+          <span class="text-[11px] tracking-wider2 text-stone-400 font-light">單價</span>
+          <span id="unitPriceDisplay" class="text-sm font-light text-ink tracking-wide">$0 / 個</span>
+        </div>
+
+        <button id="addBtn" class="w-full py-3.5 rounded-xl bg-ink text-white text-sm font-light tracking-wider2 active:opacity-80 transition">加入暫存清單</button>
+      </section>
+
+      <!-- 費用估算 -->
+      <section id="summarySection" class="bg-white border border-stone-100 rounded-2xl p-5 mb-6 hidden fade-in">
+        <h2 class="text-xs tracking-wider3 text-stone-400 font-light mb-4">費用估算</h2>
+        <div class="space-y-2 text-sm font-light">
+          <div class="flex justify-between text-stone-600">
+            <span class="tracking-wide">商品小計</span>
+            <span id="productTotal" class="tracking-wide">$0</span>
+          </div>
+          <div class="flex justify-between text-stone-400 text-xs">
+            <span class="tracking-wide" id="boxBreakdown">箱數明細</span>
+          </div>
+          <div class="flex justify-between text-stone-600">
+            <span class="tracking-wide">運費</span>
+            <span id="shippingTotal" class="tracking-wide">$0</span>
+          </div>
+          <div class="flex justify-between text-stone-600">
+            <span class="tracking-wide">稅金（5%）</span>
+            <span id="taxTotal" class="tracking-wide">$0</span>
+          </div>
+          <div class="w-full h-px bg-stone-100 my-2"></div>
+          <div class="flex justify-between text-base">
+            <span class="tracking-wider2 text-ink">總計</span>
+            <span id="grandTotal" class="tracking-wide text-ink font-normal">$0</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-5">
+          <button id="copyBtn" class="py-3 rounded-xl border border-stone-200 text-ink text-xs font-light tracking-wider2 active:bg-stone-50 transition">一鍵複製叫貨明細</button>
+          <button id="confirmBtn" class="py-3 rounded-xl bg-ink text-white text-xs font-light tracking-wider2 active:opacity-80 transition">確認叫貨</button>
+        </div>
+        <button id="confirmCopyBtn" class="w-full py-3 rounded-xl border border-stone-300 text-ink text-xs font-light tracking-wider2 active:bg-stone-50 transition mt-2">確認叫貨＋複製 TSV（Google Sheet）</button>
+      </section>
+
+    </div>
+
+    <!-- 右欄：暫存清單 + 歷史紀錄 -->
+    <div class="md:flex md:flex-col">
+
+      <!-- 暫存清單 -->
+      <section class="mb-6">
+        <h2 class="text-xs tracking-wider3 text-stone-400 font-light mb-3 px-1">暫存叫貨清單</h2>
+        <div id="cartList" class="space-y-2 mb-3"></div>
+        <p id="emptyCart" class="text-center text-xs text-stone-300 font-light py-8 border border-dashed border-stone-200 rounded-2xl">尚未加入任何品項</p>
+      </section>
+
+      <!-- 歷史紀錄 -->
+      <section>
+        <h2 class="text-xs tracking-wider3 text-stone-400 font-light mb-3 px-1">歷史叫貨紀錄</h2>
+        <div id="historyList" class="space-y-3"></div>
+        <p id="emptyHistory" class="text-center text-xs text-stone-300 font-light py-8 border border-dashed border-stone-200 rounded-2xl">尚無歷史紀錄</p>
+      </section>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div id="globalToast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-ink text-white text-[11px] font-light tracking-wide2 px-4 py-2.5 rounded-full opacity-0 pointer-events-none transition-opacity duration-200 z-50 shadow-lg">已複製到剪貼簿</div>
+
+<script>
+/* ---------------- 資料模型 ---------------- */
+const CATEGORIES = {
+  base: {
+    name: '基礎色系',
+    colors: ['白','粉','黃','米','亮粉','灰','灰粉'],
+    sizes: { 大: { 純色:94, 磨砂:110, 磨石:126 }, 小: { 純色:74, 磨砂:84, 磨石:94 } },
+    special: false
+  },
+  mid: {
+    name: '中階色系',
+    colors: ['寶寶藍','藍綠','鐵黑'],
+    sizes: { 大: { 純色:100, 磨砂:116, 磨石:131 }, 小: { 純色:79, 磨砂:89, 磨石:100 } },
+    special: false
+  },
+  advanced: {
+    name: '進階色系',
+    colors: ['聖誕橘','酪梨綠','灰藍','土黃','奶茶','灰綠','灰橘'],
+    sizes: { 大: { 純色:105, 磨砂:121, 磨石:136 }, 小: { 純色:84, 磨砂:94, 磨石:105 } },
+    special: false
+  },
+  catear: {
+    name: '貓耳杯',
+    colors: ['白','黃','聖誕橘'],
+    sizes: { 小: { 純色:110 } },
+    special: true
+  },
+  bearear: {
+    name: '熊耳杯',
+    colors: ['白','黃','聖誕橘'],
+    sizes: { 小: { 純色:110 } },
+    special: true
+  }
+};
+const CATEGORY_KEYS = Object.keys(CATEGORIES);
+const BOX_CAPACITY = { S: 38, L: 30, special: 25 };
+const BOX_FEE = 200;
+const TAX_RATE = 0.05;
+
+/* 產生系統內「所有款式與工藝」的完整選項清單，供歷史紀錄編輯模式下拉選單使用 */
+function buildStyleOptions() {
+  const options = [];
+  CATEGORY_KEYS.forEach(catKey => {
+    const cat = CATEGORIES[catKey];
+    cat.colors.forEach(color => {
+      Object.keys(cat.sizes).forEach(size => {
+        Object.keys(cat.sizes[size]).forEach(craft => {
+          const unitPrice = cat.sizes[size][craft];
+          const boxType = cat.special ? 'special' : (size === '大' ? 'L' : 'S');
+          const label = cat.special
+            ? `${cat.name}-${color}-${size === '大' ? '大' : '小'}-${craft}`
+            : `${color}-${size}-${craft}`;
+          const value = `${catKey}|${color}|${size}|${craft}`;
+          options.push({ value, label, unitPrice, boxType });
+        });
+      });
+    });
+  });
+  return options;
+}
+const STYLE_OPTIONS = buildStyleOptions();
+
+/* ---------------- 狀態（不再使用 localStorage，重新整理即清空） ---------------- */
+let state = {
+  category: 'base',
+  color: CATEGORIES.base.colors[0],
+  size: '大',
+  craft: '純色',
+  qty: 1
+};
+let cart = [];
+let history = [];
+let cartIdCounter = 0;
+let historyIdCounter = 0;
+
+/* ---------------- 選品 UI 渲染 ---------------- */
+const categoryButtons = document.getElementById('categoryButtons');
+const colorSelect = document.getElementById('colorSelect');
+const sizeButtons = document.getElementById('sizeButtons');
+const craftButtons = document.getElementById('craftButtons');
+const sizeWrap = document.getElementById('sizeWrap');
+const craftWrap = document.getElementById('craftWrap');
+const qtyInput = document.getElementById('qtyInput');
+const unitPriceDisplay = document.getElementById('unitPriceDisplay');
+
+function renderCategoryButtons() {
+  categoryButtons.innerHTML = '';
+  CATEGORY_KEYS.forEach(key => {
+    const btn = document.createElement('button');
+    const active = state.category === key;
+    btn.textContent = CATEGORIES[key].name;
+    btn.className = `py-2.5 rounded-xl text-xs font-light tracking-wide border transition ${
+      active ? 'bg-ink text-white border-ink' : 'border-stone-200 text-stone-500 active:bg-stone-50'
+    }`;
+    btn.onclick = () => {
+      state.category = key;
+      const cat = CATEGORIES[key];
+      state.color = cat.colors[0];
+      state.size = Object.keys(cat.sizes)[0];
+      state.craft = Object.keys(cat.sizes[state.size])[0];
+      renderAll();
+    };
+    categoryButtons.appendChild(btn);
+  });
+}
+
+function renderColorSelect() {
+  const cat = CATEGORIES[state.category];
+  colorSelect.innerHTML = '';
+  cat.colors.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    if (c === state.color) opt.selected = true;
+    colorSelect.appendChild(opt);
+  });
+}
+
+function renderSizeButtons() {
+  const cat = CATEGORIES[state.category];
+  const sizes = Object.keys(cat.sizes);
+  if (sizes.length <= 1) {
+    sizeWrap.classList.add('hidden');
+  } else {
+    sizeWrap.classList.remove('hidden');
+  }
+  sizeButtons.innerHTML = '';
+  sizes.forEach(s => {
+    const btn = document.createElement('button');
+    const active = state.size === s;
+    btn.textContent = s === '大' ? '大顆' : '小顆';
+    btn.className = `py-2.5 rounded-xl text-xs font-light tracking-wide border transition ${
+      active ? 'bg-ink text-white border-ink' : 'border-stone-200 text-stone-500 active:bg-stone-50'
+    }`;
+    btn.onclick = () => {
+      state.size = s;
+      state.craft = Object.keys(cat.sizes[s])[0];
+      renderAll();
+    };
+    sizeButtons.appendChild(btn);
+  });
+}
+
+function renderCraftButtons() {
+  const cat = CATEGORIES[state.category];
+  const crafts = Object.keys(cat.sizes[state.size]);
+  if (crafts.length <= 1) {
+    craftWrap.classList.add('hidden');
+  } else {
+    craftWrap.classList.remove('hidden');
+  }
+  craftButtons.innerHTML = '';
+  crafts.forEach(c => {
+    const btn = document.createElement('button');
+    const active = state.craft === c;
+    btn.textContent = c;
+    btn.className = `py-2.5 rounded-xl text-xs font-light tracking-wide border transition ${
+      active ? 'bg-ink text-white border-ink' : 'border-stone-200 text-stone-500 active:bg-stone-50'
+    }`;
+    btn.onclick = () => {
+      state.craft = c;
+      renderAll();
+    };
+    craftButtons.appendChild(btn);
+  });
+}
+
+function getUnitPrice() {
+  const cat = CATEGORIES[state.category];
+  return cat.sizes[state.size][state.craft] || 0;
+}
+
+function renderUnitPrice() {
+  unitPriceDisplay.textContent = `$${getUnitPrice()} / 個`;
+}
+
+function renderAll() {
+  renderCategoryButtons();
+  renderColorSelect();
+  renderSizeButtons();
+  renderCraftButtons();
+  renderUnitPrice();
+}
+
+colorSelect.addEventListener('change', e => {
+  state.color = e.target.value;
+});
+
+document.getElementById('qtyMinus').onclick = () => {
+  qtyInput.value = Math.max(1, (parseInt(qtyInput.value) || 1) - 1);
+};
+document.getElementById('qtyPlus').onclick = () => {
+  qtyInput.value = (parseInt(qtyInput.value) || 1) + 1;
+};
+
+/* ---------------- 加入暫存 ---------------- */
+document.getElementById('addBtn').onclick = () => {
+  const qty = Math.max(1, parseInt(qtyInput.value) || 1);
+  const cat = CATEGORIES[state.category];
+  const boxType = cat.special ? 'special' : (state.size === '大' ? 'L' : 'S');
+  const unitPrice = getUnitPrice();
+  cartIdCounter += 1;
+  cart.push({
+    id: cartIdCounter,
+    categoryKey: state.category,
+    categoryName: cat.name,
+    special: cat.special,
+    color: state.color,
+    size: state.size,
+    craft: state.craft,
+    qty,
+    unitPrice,
+    boxType
+  });
+  qtyInput.value = 1;
+  renderCart();
+};
+
+/* ---------------- 暫存清單渲染 ---------------- */
+const cartList = document.getElementById('cartList');
+const emptyCart = document.getElementById('emptyCart');
+const summarySection = document.getElementById('summarySection');
+
+function itemLabel(item) {
+  if (item.special) {
+    return `${item.categoryName}-${item.color}-${item.size === '大' ? '大' : '小'}-${item.craft}`;
+  }
+  return `${item.color}-${item.size}-${item.craft}`;
+}
+
+function calcBoxesAndShipping(items) {
+  const totals = { S: 0, L: 0, special: 0 };
+  items.forEach(it => { totals[it.boxType] += it.qty; });
+  const boxesS = Math.ceil(totals.S / BOX_CAPACITY.S);
+  const boxesL = Math.ceil(totals.L / BOX_CAPACITY.L);
+  const boxesSpecial = Math.ceil(totals.special / BOX_CAPACITY.special);
+  const totalBoxes = boxesS + boxesL + boxesSpecial;
+  const shipping = totalBoxes * BOX_FEE;
+  return { totals, boxesS, boxesL, boxesSpecial, totalBoxes, shipping };
+}
+
+function renderCart() {
+  cartList.innerHTML = '';
+  if (cart.length === 0) {
+    emptyCart.classList.remove('hidden');
+    summarySection.classList.add('hidden');
+    return;
+  }
+  emptyCart.classList.add('hidden');
+  summarySection.classList.remove('hidden');
+
+  cart.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'bg-white border border-stone-100 rounded-xl px-4 py-3 flex items-center justify-between fade-in';
+    row.innerHTML = `
+      <div>
+        <p class="text-sm font-light tracking-wide text-ink">${itemLabel(item)}</p>
+        <p class="text-[11px] text-stone-400 font-light mt-0.5">$${item.unitPrice} × ${item.qty} = $${item.unitPrice * item.qty}</p>
+      </div>
+      <button data-id="${item.id}" class="removeItemBtn w-9 h-9 flex items-center justify-center text-stone-300 hover:text-stone-500 text-sm">✕</button>
+    `;
+    cartList.appendChild(row);
+  });
+
+  document.querySelectorAll('.removeItemBtn').forEach(btn => {
+    btn.onclick = () => {
+      const id = parseInt(btn.dataset.id);
+      cart = cart.filter(i => i.id !== id);
+      renderCart();
+    };
+  });
+
+  renderSummary();
+}
+
+function getCostBreakdown() {
+  const productTotal = cart.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
+  const { boxesS, boxesL, boxesSpecial, totalBoxes, shipping } = calcBoxesAndShipping(cart);
+  const tax = Math.round((productTotal + shipping) * TAX_RATE);
+  const grandTotal = productTotal + shipping + tax;
+  return { productTotal, boxesS, boxesL, boxesSpecial, totalBoxes, shipping, tax, grandTotal };
+}
+
+function renderSummary() {
+  const { productTotal, boxesS, boxesL, boxesSpecial, totalBoxes, shipping, tax, grandTotal } = getCostBreakdown();
+  document.getElementById('productTotal').textContent = `$${productTotal}`;
+  document.getElementById('boxBreakdown').textContent =
+    `小箱 ${boxesS}・大箱 ${boxesL}・特殊箱 ${boxesSpecial}（共 ${totalBoxes} 箱）`;
+  document.getElementById('shippingTotal').textContent = `$${shipping}`;
+  document.getElementById('taxTotal').textContent = `$${tax}`;
+  document.getElementById('grandTotal').textContent = `$${grandTotal}`;
+}
+
+/* ---------------- 一鍵複製叫貨明細（簡易文字版） ---------------- */
+document.getElementById('copyBtn').onclick = () => {
+  const now = new Date();
+  const dateStr = `${now.getMonth() + 1}/${now.getDate()}`;
+  let text = `【 ${dateStr} 叫貨 】\n`;
+  cart.forEach(item => {
+    text += `${itemLabel(item)} *${item.qty}\n`;
+  });
+  text = text.trim();
+  copyToClipboard(text);
+};
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast();
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  });
+}
+
+function showToast(message) {
+  const toast = document.getElementById('globalToast');
+  if (message) toast.textContent = message;
+  toast.classList.remove('opacity-0');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => toast.classList.add('opacity-0'), 1600);
+}
+
+/* ---------------- 確認叫貨（共用邏輯：寫入歷史紀錄，並可選擇是否自動複製 Google Sheet TSV 格式） ---------------- */
+function buildTsvText(dateStr, items, shipping, tax, grandTotal) {
+  const rows = [];
+  rows.push(['日期', '款式', '數量', '單價', '總金額'].join('\t'));
+  items.forEach((item, idx) => {
+    const dateCell = idx === 0 ? dateStr : '';
+    const subtotal = item.unitPrice * item.qty;
+    rows.push([dateCell, itemLabel(item), item.qty, item.unitPrice, subtotal].join('\t'));
+  });
+  rows.push(['', '運費', 1, shipping, shipping].join('\t'));
+  rows.push(['', '稅金', '', '', tax].join('\t'));
+  rows.push(['', '總金額', '', '', grandTotal].join('\t'));
+  return rows.join('\n');
+}
+
+function confirmOrder(shouldCopyTsv) {
+  if (cart.length === 0) return;
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+  const { productTotal, shipping, tax, grandTotal } = getCostBreakdown();
+
+  // 先在購物車清空之前，把所有需要的資料快照下來（複製文字／TSV 都依賴這份快照）
+  const snapshotItems = cart.map(i => ({ label: itemLabel(i), qty: i.qty, unitPrice: i.unitPrice, boxType: i.boxType }));
+  const tsvText = shouldCopyTsv ? buildTsvText(dateStr, cart, shipping, tax, grandTotal) : null;
+
+  // 寫入歷史紀錄
+  historyIdCounter += 1;
+  history.unshift({
+    id: historyIdCounter,
+    date: dateStr,
+    timestamp: now.getTime(),
+    items: snapshotItems,
+    productTotal,
+    shipping,
+    tax,
+    grandTotal,
+    actualCost: null
+  });
+
+  // 複製邏輯必須在購物車清空之前完成準備（tsvText 已於上方同步取得内容）
+  if (shouldCopyTsv && tsvText !== null) {
+    copyToClipboard(tsvText);
+  }
+
+  cart = [];
+  renderCart();
+  renderHistory();
+}
+
+document.getElementById('confirmBtn').onclick = () => confirmOrder(false);
+document.getElementById('confirmCopyBtn').onclick = () => confirmOrder(true);
+
+/* ---------------- 歷史紀錄渲染 ---------------- */
+const historyList = document.getElementById('historyList');
+const emptyHistory = document.getElementById('emptyHistory');
+
+// 歷史紀錄「整卡編輯」狀態（同一時間只允許一張卡片進入編輯模式）
+let editingHistoryId = null;
+let editDraft = null; // { date, items: [{label, qty, unitPrice, boxType, isNew, selectedValue}], shipping }
+
+function calcShippingForDraftItems(items) {
+  const totals = { S: 0, L: 0, special: 0 };
+  items.forEach(it => {
+    if (it.boxType && totals.hasOwnProperty(it.boxType)) {
+      totals[it.boxType] += Number(it.qty) || 0;
+    }
+  });
+  const boxesS = Math.ceil(totals.S / BOX_CAPACITY.S);
+  const boxesL = Math.ceil(totals.L / BOX_CAPACITY.L);
+  const boxesSpecial = Math.ceil(totals.special / BOX_CAPACITY.special);
+  return (boxesS + boxesL + boxesSpecial) * BOX_FEE;
+}
+
+function startEditHistory(id) {
+  const record = history.find(r => r.id === id);
+  if (!record) return;
+  editingHistoryId = id;
+  editDraft = {
+    date: record.date,
+    items: record.items.map(i => ({ label: i.label, qty: i.qty, unitPrice: i.unitPrice || 0, boxType: i.boxType || null, isNew: false, selectedValue: '' })),
+    shipping: record.shipping
+  };
+  editDraft.shipping = calcShippingForDraftItems(editDraft.items);
+  renderHistory();
+}
+
+function cancelEditHistory() {
+  editingHistoryId = null;
+  editDraft = null;
+  renderHistory();
+}
+
+function saveEditHistory(id) {
+  const record = history.find(r => r.id === id);
+  if (!record || !editDraft) return;
+
+  const cleanedItems = editDraft.items
+    .map(i => ({
+      label: (i.label || '').trim(),
+      qty: Number(i.qty) || 0,
+      unitPrice: Number(i.unitPrice) || 0,
+      boxType: i.boxType || null
+    }))
+    .filter(i => i.label !== '' && i.qty > 0);
+
+  // 依據最新品項與數量，完整重新執行箱數／運費計算邏輯（與確認叫貨時完全一致的規則）
+  const productTotal = cleanedItems.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const shipping = calcShippingForDraftItems(cleanedItems);
+  const tax = Math.round((productTotal + shipping) * TAX_RATE);
+  const grandTotal = productTotal + shipping + tax;
+
+  record.date = (editDraft.date || '').trim() || record.date;
+  record.items = cleanedItems;
+  record.productTotal = productTotal;
+  record.shipping = shipping;
+  record.tax = tax;
+  record.grandTotal = grandTotal;
+
+  editingHistoryId = null;
+  editDraft = null;
+  renderHistory();
+}
+
+function updateEditSummary(card) {
+  // 每次品項或數量變動，運費都依「箱數計價規則」重新精算，不再手動輸入
+  editDraft.shipping = calcShippingForDraftItems(editDraft.items);
+  const productTotal = editDraft.items.reduce((s, i) => s + (Number(i.unitPrice) || 0) * (Number(i.qty) || 0), 0);
+  const shipping = editDraft.shipping;
+  const tax = Math.round((productTotal + shipping) * TAX_RATE);
+  const grandTotal = productTotal + shipping + tax;
+  card.querySelector('.editSummaryProductTotal').textContent = `$${productTotal}`;
+  card.querySelector('.editSummaryShipping').textContent = `$${shipping}`;
+  card.querySelector('.editSummaryTax').textContent = `$${tax}`;
+  card.querySelector('.editSummaryGrandTotal').textContent = `$${grandTotal}`;
+}
+
+function buildEditCardHTML() {
+  const draft = editDraft;
+  return `
+    <div class="flex items-center justify-between mb-3 gap-2">
+      <input type="text" class="editDateInput flex-1 text-sm font-normal tracking-wide text-ink border border-stone-200 rounded-lg py-1.5 px-2 focus:outline-none focus:border-stone-400" value="${draft.date}">
+    </div>
+    <p class="text-[11px] tracking-wide text-stone-400 font-light mb-2">既有品項（款式／數量）</p>
+    <div class="editItemsContainer mb-2"></div>
+    <button class="editAddItemBtn w-full py-2 rounded-lg border border-dashed border-stone-300 text-stone-400 text-xs font-light tracking-wide active:bg-stone-50 transition mb-4">＋ 追加品項/工藝</button>
+    <div class="w-full h-px bg-stone-100 mb-3"></div>
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-[11px] tracking-wide text-stone-400 font-light">商品小計</span>
+      <span class="editSummaryProductTotal text-sm font-light text-ink tracking-wide">$0</span>
+    </div>
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-[11px] tracking-wide text-stone-400 font-light">運費<span class="text-stone-300">（依箱數自動精算）</span></span>
+      <span class="editSummaryShipping text-sm font-light text-ink tracking-wide">$${draft.shipping}</span>
+    </div>
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-[11px] tracking-wide text-stone-400 font-light">稅金（5%）</span>
+      <span class="editSummaryTax text-sm font-light text-ink tracking-wide">$0</span>
+    </div>
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-[11px] tracking-wide text-ink font-normal">總計</span>
+      <span class="editSummaryGrandTotal text-sm font-normal text-ink tracking-wide">$0</span>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <button class="editCancelBtn py-2.5 rounded-xl border border-stone-200 text-stone-500 text-xs font-light tracking-wider2 active:bg-stone-50 transition">取消</button>
+      <button class="editSaveBtn py-2.5 rounded-xl bg-ink text-white text-xs font-light tracking-wider2 active:opacity-80 transition">儲存</button>
+    </div>
+  `;
+}
+
+function wireEditCard(card, record) {
+  const dateInput = card.querySelector('.editDateInput');
+  dateInput.addEventListener('input', () => { editDraft.date = dateInput.value; });
+
+  const styleOptionsHtml = STYLE_OPTIONS.map(opt =>
+    `<option value="${opt.value}">${opt.label}（$${opt.unitPrice}）</option>`
+  ).join('');
+
+  function rebuildRows() {
+    const container = card.querySelector('.editItemsContainer');
+
+    container.innerHTML = editDraft.items.map((item, idx) => {
+      if (item.isNew) {
+        // 追加品項／工藝：以下拉選單選擇款式，避免手動輸入造成款式或單價錯誤
+        return `
+          <div class="flex items-center gap-1.5 mb-2" data-idx="${idx}">
+            <div class="relative flex-[2] min-w-0">
+              <select class="editItemSelect w-full appearance-none border border-stone-200 rounded-lg py-1.5 pl-2 pr-5 text-xs font-light tracking-wide focus:outline-none focus:border-stone-400 bg-white">
+                <option value="" ${item.selectedValue ? '' : 'selected'}>請選擇款式／工藝</option>
+                ${styleOptionsHtml}
+              </select>
+              <div class="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-stone-300 text-[10px]">▾</div>
+            </div>
+            <input type="number" class="editItemQty w-14 border border-stone-200 rounded-lg py-1.5 px-1 text-xs font-light tracking-wide text-center focus:outline-none focus:border-stone-400" placeholder="數量" value="${item.qty}">
+            <span class="editItemUnitPrice w-14 shrink-0 text-right text-[10px] text-stone-400 font-light">${item.unitPrice ? '$' + item.unitPrice : '—'}</span>
+            <button class="editRemoveItemBtn w-7 h-7 flex items-center justify-center text-stone-300 hover:text-stone-500 text-xs shrink-0">✕</button>
+          </div>
+        `;
+      }
+      // 既有品項：款式名稱純文字顯示，不可修改，只能調整數量或刪除
+      return `
+        <div class="flex items-center gap-1.5 mb-2" data-idx="${idx}">
+          <span class="flex-[2] min-w-0 truncate text-xs font-light tracking-wide text-ink py-1.5 px-2" title="${item.label}">${item.label}</span>
+          <input type="number" class="editItemQty w-14 border border-stone-200 rounded-lg py-1.5 px-1 text-xs font-light tracking-wide text-center focus:outline-none focus:border-stone-400" placeholder="數量" value="${item.qty}">
+          <span class="w-14 shrink-0 text-right text-[10px] text-stone-400 font-light">$${item.unitPrice}</span>
+          <button class="editRemoveItemBtn w-7 h-7 flex items-center justify-center text-stone-300 hover:text-stone-500 text-xs shrink-0">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('[data-idx]').forEach(rowEl => {
+      const idx = parseInt(rowEl.dataset.idx);
+      const qtyInput = rowEl.querySelector('.editItemQty');
+      const removeBtn = rowEl.querySelector('.editRemoveItemBtn');
+      const selectEl = rowEl.querySelector('.editItemSelect');
+
+      if (selectEl) {
+        selectEl.addEventListener('change', () => {
+          const opt = STYLE_OPTIONS.find(o => o.value === selectEl.value);
+          const item = editDraft.items[idx];
+          if (opt) {
+            // 核心需求：選擇款式後，自動偵測並帶出該品項的預設單價與箱型
+            item.selectedValue = opt.value;
+            item.label = opt.label;
+            item.unitPrice = opt.unitPrice;
+            item.boxType = opt.boxType;
+          } else {
+            item.selectedValue = '';
+            item.label = '';
+            item.unitPrice = 0;
+            item.boxType = null;
+          }
+          rowEl.querySelector('.editItemUnitPrice').textContent = item.unitPrice ? `$${item.unitPrice}` : '—';
+          updateEditSummary(card);
+        });
+      }
+
+      qtyInput.addEventListener('input', () => {
+        editDraft.items[idx].qty = qtyInput.value === '' ? 0 : Number(qtyInput.value);
+        updateEditSummary(card);
+      });
+
+      removeBtn.addEventListener('click', () => {
+        editDraft.items.splice(idx, 1);
+        rebuildRows();
+        updateEditSummary(card);
+      });
+    });
+  }
+  rebuildRows();
+
+  card.querySelector('.editAddItemBtn').addEventListener('click', () => {
+    // 核心需求：新增一列「下拉選單」讓使用者從系統既有款式／工藝中挑選，補上漏填的品項
+    editDraft.items.push({ label: '', qty: 1, unitPrice: 0, boxType: null, isNew: true, selectedValue: '' });
+    rebuildRows();
+    updateEditSummary(card);
+    const selects = card.querySelectorAll('.editItemSelect');
+    if (selects.length) selects[selects.length - 1].focus();
+  });
+
+  card.querySelector('.editCancelBtn').addEventListener('click', cancelEditHistory);
+  card.querySelector('.editSaveBtn').addEventListener('click', () => saveEditHistory(record.id));
+
+  updateEditSummary(card);
+}
+
+/* ---------------- 單筆歷史紀錄獨立複製 ---------------- */
+function buildHistoryText(record) {
+  let text = `【 ${record.date} 叫貨 】\n`;
+  record.items.forEach(item => {
+    text += `${item.label} *${item.qty}\n`;
+  });
+  return text.trim();
+}
+
+function buildHistoryTsv(record) {
+  const rows = [];
+  rows.push(['日期', '款式', '數量', '單價', '總金額'].join('\t'));
+  record.items.forEach((item, idx) => {
+    const dateCell = idx === 0 ? record.date : '';
+    const subtotal = (Number(item.unitPrice) || 0) * (Number(item.qty) || 0);
+    rows.push([dateCell, item.label, item.qty, item.unitPrice, subtotal].join('\t'));
+  });
+  rows.push(['', '運費', 1, record.shipping, record.shipping].join('\t'));
+  rows.push(['', '稅金', '', '', record.tax].join('\t'));
+  rows.push(['', '總金額', '', '', record.grandTotal].join('\t'));
+  return rows.join('\n');
+}
+
+function renderHistory() {
+  historyList.innerHTML = '';
+  if (history.length === 0) {
+    emptyHistory.classList.remove('hidden');
+    return;
+  }
+  emptyHistory.classList.add('hidden');
+
+  history.forEach(record => {
+    const card = document.createElement('div');
+    card.className = 'bg-white border border-stone-100 rounded-2xl p-5 fade-in';
+
+    // ---- 編輯模式 ----
+    if (record.id === editingHistoryId) {
+      card.innerHTML = buildEditCardHTML();
+      historyList.appendChild(card);
+      wireEditCard(card, record);
+      return;
+    }
+
+    // ---- 檢視模式 ----
+    const itemsHtml = record.items.map(i =>
+      `<p class="text-xs font-light text-stone-500 tracking-wide">${i.label} <span class="text-stone-300">×${i.qty}</span></p>`
+    ).join('');
+
+    const hasActual = record.actualCost !== null && record.actualCost !== undefined && record.actualCost !== '';
+    let diffHtml = '';
+    if (hasActual) {
+      const diff = Number(record.actualCost) - record.grandTotal;
+      const sign = diff > 0 ? '+' : diff < 0 ? '' : '±';
+      const colorClass = diff === 0 ? 'text-stone-400' : (diff > 0 ? 'text-stone-500' : 'text-stone-500');
+      diffHtml = `<p class="text-[11px] font-light ${colorClass} mt-2 tracking-wide">與系統估算差額：${sign}${diff} 元</p>`;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between mb-3">
+        <p class="text-sm font-normal tracking-wider2 text-ink">${record.date} 叫貨</p>
+        <div class="flex items-center gap-0.5 -mr-1.5 -mt-1">
+          <button data-id="${record.id}" class="editHistoryBtn text-stone-300 hover:text-stone-500 text-[11px] font-light tracking-wide w-11 h-8 flex items-center justify-center">編輯</button>
+          <button data-id="${record.id}" class="deleteHistoryBtn text-stone-300 hover:text-stone-500 text-sm w-8 h-8 flex items-center justify-center">✕</button>
+        </div>
+      </div>
+      <div class="space-y-0.5 mb-4">${itemsHtml}</div>
+      <div class="w-full h-px bg-stone-100 mb-3"></div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] tracking-wide text-stone-400 font-light">商品小計</span>
+        <span class="text-sm font-light text-ink tracking-wide">$${record.productTotal}</span>
+      </div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] tracking-wide text-stone-400 font-light">運費</span>
+        <span class="text-sm font-light text-ink tracking-wide">$${record.shipping}</span>
+      </div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] tracking-wide text-stone-400 font-light">稅金（5%）</span>
+        <span class="text-sm font-light text-ink tracking-wide">$${record.tax}</span>
+      </div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] tracking-wide text-stone-400 font-light">系統估算總計</span>
+        <span class="text-sm font-light text-ink tracking-wide">$${record.grandTotal}</span>
+      </div>
+      <div class="flex items-center justify-between mt-3">
+        <span class="text-[11px] tracking-wide text-stone-400 font-light">廠商實際請款</span>
+        <input type="number" placeholder="輸入金額" data-id="${record.id}"
+          class="actualCostInput w-28 text-right border border-stone-200 rounded-lg py-1.5 px-2 text-sm font-light tracking-wide focus:outline-none focus:border-stone-400"
+          value="${record.actualCost !== null && record.actualCost !== undefined ? record.actualCost : ''}">
+      </div>
+      ${diffHtml}
+      <div class="w-full h-px bg-stone-100 my-3"></div>
+      <div class="grid grid-cols-2 gap-2">
+        <button data-id="${record.id}" class="copyHistoryTextBtn py-2.5 rounded-xl border border-stone-200 text-ink text-[11px] font-light tracking-wider2 active:bg-stone-50 transition">複製叫貨明細</button>
+        <button data-id="${record.id}" class="copyHistoryTsvBtn py-2.5 rounded-xl border border-stone-200 text-ink text-[11px] font-light tracking-wider2 active:bg-stone-50 transition">複製 TSV (Google Sheet)</button>
+      </div>
+    `;
+    historyList.appendChild(card);
+  });
+
+  document.querySelectorAll('.editHistoryBtn').forEach(btn => {
+    btn.onclick = () => startEditHistory(parseInt(btn.dataset.id));
+  });
+
+  document.querySelectorAll('.deleteHistoryBtn').forEach(btn => {
+    btn.onclick = () => {
+      const id = parseInt(btn.dataset.id);
+      history = history.filter(r => r.id !== id);
+      if (editingHistoryId === id) { editingHistoryId = null; editDraft = null; }
+      renderHistory();
+    };
+  });
+
+  document.querySelectorAll('.copyHistoryTextBtn').forEach(btn => {
+    btn.onclick = () => {
+      const record = history.find(r => r.id === parseInt(btn.dataset.id));
+      if (!record) return;
+      copyToClipboard(buildHistoryText(record));
+    };
+  });
+
+  document.querySelectorAll('.copyHistoryTsvBtn').forEach(btn => {
+    btn.onclick = () => {
+      const record = history.find(r => r.id === parseInt(btn.dataset.id));
+      if (!record) return;
+      copyToClipboard(buildHistoryTsv(record));
+    };
+  });
+
+  document.querySelectorAll('.actualCostInput').forEach(input => {
+    input.addEventListener('input', () => {
+      const id = parseInt(input.dataset.id);
+      const record = history.find(r => r.id === id);
+      if (!record) return;
+      record.actualCost = input.value === '' ? null : Number(input.value);
+    });
+    input.addEventListener('blur', () => {
+      renderHistory();
+    });
+  });
+}
+
+/* ---------------- 初始化 ---------------- */
+renderAll();
+renderCart();
+renderHistory();
+</script>
+
+</body>
+</html>
